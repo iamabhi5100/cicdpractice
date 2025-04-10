@@ -30,7 +30,7 @@ jobs:
             mkdir -p ~/myapp
             cd ~/myapp
             # Pull latest code
-            git pull origin main || git clone https://github.com/yourusername/myapp.git .
+            git pull origin main || git clone https://github.com/iamabhi5100/cicdpractice.git .
             # Install dependencies
             npm install
             # Restart app with PM2
