@@ -8,31 +8,51 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣  Pull the repository code
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2️⃣  Set up the correct Node.js version for any build steps
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
+      # 3️⃣  SSH into the EC2 instance and deploy
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ec2-user
-          EC2_KEY: ${{ secrets.EC2_KEY }}
+          EC2_KEY:  ${{ secrets.EC2_KEY }}
         run: |
+          # ----- prepare SSH key -----
           echo "$EC2_KEY" > private_key.pem
           chmod 400 private_key.pem
+
+          # ----- run commands on the instance -----
           ssh -o StrictHostKeyChecking=no -i private_key.pem ${EC2_USER}@${EC2_HOST} << 'EOF'
-            # Navigate to app directory (create if not exists)
+            set -e                                  # stop on first error
+
+            # 1. make sure the app folder exists and cd into it
             mkdir -p ~/myapp
             cd ~/myapp
-            # Pull latest code
-            git pull origin main || git clone https://github.com/iamabhi5100/cicdpractice.git .
-            # Install dependencies
-            npm install
-            # Restart app with PM2
-            pm2 restart src/index.js || pm2 start src/index.js
+
+            # 2. pull or clone the latest code
+            if [ -d ".git" ]; then
+              git fetch origin main
+              git reset --hard origin/main
+            else
+              git clone https://github.com/iamabhi5100/cicdpractice.git .
+            fi
+
+            # 3. install dependencies
+            npm ci                                   # faster & reproducible
+
+            # 4. (re)start the app with PM2 using the ecosystem file
+            pm2 startOrReload ecosystem.config.js
+
+            # 5. save the PM2 process list so it restarts on reboot
+            pm2 save
           EOF
