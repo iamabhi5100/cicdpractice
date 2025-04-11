@@ -8,15 +8,20 @@ app.use(express.json());
 
 // Create users table (run once)
 const setupDb = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      username VARCHAR(50) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL
-    )
-  `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL
+      )
+    `);
+    console.log('Users table created or already exists');
+  } catch (err) {
+    console.error('Error creating users table:', err.message);
+    process.exit(1); // Exit if table creation fails
+  }
 };
-setupDb();
 
 // GET / endpoint for testing
 app.get('/', (req, res) => {
@@ -55,5 +60,11 @@ app.post('/register', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Start the server only after the database is set up
+const startServer = async () => {
+  await setupDb();
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
+
+startServer();
