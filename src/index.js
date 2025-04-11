@@ -18,6 +18,11 @@ const setupDb = async () => {
 };
 setupDb();
 
+// GET / endpoint for testing
+app.get('/', (req, res) => {
+  res.json({ message: 'Welcome to the API!' });
+});
+
 // Login API
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
