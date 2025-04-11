@@ -1,3 +1,4 @@
+// Test CI/CD trigger
 const express = require('express');
 const pool = require('./db');
 require('dotenv').config();
